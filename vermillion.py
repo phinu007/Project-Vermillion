@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # -------------------------------------------------
-# Vermillion v0.1
+# Vermillion v0.2
 # AI-Guided Terrain Traversability Analyzer
 # -------------------------------------------------
 
@@ -40,19 +40,49 @@ for filename in image_files:
         print(f"⚠ Could not read {filename}")
         continue
 
-    # Convert to grayscale
+    # -------------------------------------------------
+    # Convert to Grayscale
+    # -------------------------------------------------
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-    # Edge Detection
+    # -------------------------------------------------
+    # Edge Detection (Canny)
+    # -------------------------------------------------
     edges = cv2.Canny(gray, 100, 200)
 
+    # -------------------------------------------------
+    # Corner Detection (Shi-Tomasi)
+    # -------------------------------------------------
+    corner_img = img.copy()
+
+    corners = cv2.goodFeaturesToTrack(
+        gray,
+        maxCorners=75,
+        qualityLevel=0.01,
+        minDistance=10
+    )
+
+    corner_count = 0
+
+    if corners is not None:
+        corners = np.intp(corners)
+        corner_count = len(corners)
+
+        for corner in corners:
+            x, y = corner.ravel()
+            cv2.circle(corner_img, (x, y), 4, (0, 0, 255), -1)
+
+    # -------------------------------------------------
     # Calculate Edge Density
+    # -------------------------------------------------
     edge_pixels = np.sum(edges > 0)
     total_pixels = edges.size
 
     edge_density = edge_pixels / total_pixels
 
-    # Safety Classification
+    # -------------------------------------------------
+    # Rule-Based Terrain Classification
+    # -------------------------------------------------
     if edge_density < 0.05:
         status = "🟢 SAFE"
     elif edge_density < 0.12:
@@ -60,14 +90,22 @@ for filename in image_files:
     else:
         status = "🔴 DANGER"
 
+    # -------------------------------------------------
+    # Print Results
+    # -------------------------------------------------
     print("\n----------------------------------")
-    print("Image:", filename)
-    print("Edge Density:", round(edge_density, 3))
-    print("Terrain Status:", status)
+    print("Image          :", filename)
+    print("Edge Density   :", round(edge_density, 3))
+    print("Corner Count   :", corner_count)
+    print("Terrain Status :", status)
 
-    # Display image
-    cv2.imshow("Original", img)
+    # -------------------------------------------------
+    # Display Images
+    # -------------------------------------------------
+    cv2.imshow("Original Image", img)
+    cv2.imshow("Grayscale Image", gray)
     cv2.imshow("Detected Edges", edges)
+    cv2.imshow("Detected Corners", corner_img)
 
     cv2.waitKey(0)
 
