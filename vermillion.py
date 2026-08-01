@@ -57,7 +57,7 @@ for filename in image_files:
 
     corners = cv2.goodFeaturesToTrack(
         gray,
-        maxCorners=75,
+        maxCorners=1000,
         qualityLevel=0.01,
         minDistance=10
     )
